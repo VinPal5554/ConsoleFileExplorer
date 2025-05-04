@@ -45,13 +45,26 @@ void listDirectory(const fs::path& path) {
     }
 }
 
+std::string getBreadcrumbPrompt(const fs::path& path) {
+    std::string prompt = "[";
+    bool first = true;
+    for (const auto& part : path) {
+        if (!first) prompt += " > ";
+        prompt += part.string();
+        first = false;
+    }
+    prompt += "] > ";
+    return prompt;
+}
+
 int main() {
     fs::path currentPath = getStartingDirectory();  // Start from a sensible location
     std::string command;
 
     while (true) {
         listDirectory(currentPath);
-        std::cout << "\nCommands: cd <folder>, up, open <file>, quit\n> ";
+        std::cout << "\nCommands: cd <folder>, up, open <file>, quit\n";
+        std::cout << getBreadcrumbPrompt(currentPath);
 
         std::getline(std::cin, command);
 

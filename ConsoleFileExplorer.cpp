@@ -2,10 +2,16 @@
 #include <filesystem>
 #include <string>
 #include <fstream>
+#include <windows.h>
 
 #ifdef _WIN32
 #include <windows.h>  // For getting user folder on Windows
 #endif
+
+const std::string COLOR_RESET = "\033[0m";
+const std::string COLOR_BLUE = "\033[34m";
+const std::string COLOR_GREEN = "\033[32m";
+const std::string COLOR_GRAY = "\033[90m";
 
 namespace fs = std::filesystem;
 
@@ -39,9 +45,23 @@ fs::path getStartingDirectory() {
 
 void listDirectory(const fs::path& path) {
     std::cout << "\nContents of: " << path << "\n";
+
     for (const auto& entry : fs::directory_iterator(path)) {
+        const auto filename = entry.path().filename().string();
+        std::string color = COLOR_RESET;
+
+        if (fs::is_directory(entry)) {
+            color = COLOR_BLUE;
+        }
+        else if (entry.path().extension() == ".exe" || entry.path().extension() == ".sh") {
+            color = COLOR_GREEN;
+        }
+        else if (filename[0] == '.') { // Hidden file on Unix/macOS
+            color = COLOR_GRAY;
+        }
+
         std::cout << (fs::is_directory(entry) ? "[DIR]  " : "       ");
-        std::cout << entry.path().filename().string() << "\n";
+        std::cout << color << filename << COLOR_RESET << "\n";
     }
 }
 
@@ -57,7 +77,17 @@ std::string getBreadcrumbPrompt(const fs::path& path) {
     return prompt;
 }
 
+
 int main() {
+#ifdef _WIN32
+    // Enable ANSI escape sequences on Windows 10+ terminals
+    HANDLE hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+    DWORD dwMode = 0;
+    if (hOut != INVALID_HANDLE_VALUE &&
+        GetConsoleMode(hOut, &dwMode)) {
+        SetConsoleMode(hOut, dwMode | ENABLE_VIRTUAL_TERMINAL_PROCESSING);
+    }
+#endif
     fs::path currentPath = getStartingDirectory();  // Start from a sensible location
     std::string command;
 
